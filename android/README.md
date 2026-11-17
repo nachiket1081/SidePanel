@@ -6,47 +6,69 @@ The **SidePanel Android Application** is a native, landscape-first companion das
 
 ## Technical Specifications
 
-- **Language**: Kotlin 2.0+
-- **UI Framework**: Jetpack Compose (Material3, Canvas graphics)
+- **Language**: Kotlin 2.0.21
+- **UI Framework**: Jetpack Compose 1.7+ (Material3, Canvas graphics)
 - **Minimum SDK**: API 26 (Android 8.0 Oreo)
-- **Target SDK**: API 35 / 36 (Android 15 / 16)
+- **Target SDK**: API 35 (Android 15)
 - **Orientation**: Locked Landscape (`android:screenOrientation="landscape"`)
-- **Networking**: OkHttp WebSocket Client with `kotlinx.coroutines` Flow streaming
-- **Serialization**: `kotlinx.serialization` (JSON)
-- **Local Storage**: Jetpack DataStore Preferences
+- **Networking**: OkHttp 4.12.0 WebSocket Client with `kotlinx.coroutines` Flow streaming
+- **Serialization**: `kotlinx.serialization` 1.7.3 (JSON)
+- **Local Storage**: Jetpack DataStore Preferences 1.1.1
 
 ---
 
-## Planned Directory Structure
+## Architecture & Module Structure
 
 ```text
 android/
-├── README.md
 ├── build.gradle.kts                 # Root project Gradle configuration
-├── settings.gradle.kts               # Gradle project modules declaration
-├── gradle.properties                 # JVM and AndroidX configuration
-├── app/
-│   ├── build.gradle.kts             # App module Gradle configuration & dependencies
-│   ├── proguard-rules.pro           # ProGuard / R8 optimization rules
-│   └── src/
-│       ├── main/
-│       │   ├── AndroidManifest.xml  # Permissions (INTERNET, ACCESS_NETWORK_STATE, CAMERA)
-│       │   ├── java/com/sidepanel/app/
-│       │   │   ├── MainActivity.kt
-│       │   │   ├── SidePanelApp.kt  # Application class
-│       │   │   ├── data/
-│       │   │   │   ├── model/       # Data transfer objects conforming to PROTOCOL.md
-│       │   │   │   ├── network/     # OkHttp WebSocket connection manager
-│       │   │   │   └── repository/  # Telemetry & settings repository
-│       │   │   ├── domain/
-│       │   │   │   └── usecase/     # Business logic use cases
-│       │   │   └── ui/
-│       │   │       ├── dashboard/   # Landscape dashboard screen & grid
-│       │   │       ├── widgets/     # CPU, GPU, RAM, Network, and Control widgets
-│       │   │       ├── pairing/     # CameraX QR code scanner dialog
-│       │   │       └── theme/       # Material3 typography, color schemes, shapes
-│       │   └── res/
-│       │       ├── values/
-│       │       └── mipmap/
-│       └── test/                    # Unit tests
+├── settings.gradle.kts               # Plugin & dependency management
+├── gradle.properties                 # JVM arguments & AndroidX flags
+├── gradlew / gradlew.bat             # Gradle wrapper scripts (v8.13)
+├── gradle/
+│   ├── libs.versions.toml           # Version Catalog for dependencies & plugins
+│   └── wrapper/gradle-wrapper.jar   # Gradle distribution wrapper
+│
+└── app/
+    ├── build.gradle.kts             # App module configuration & dependencies
+    ├── proguard-rules.pro           # ProGuard & R8 serialization keep rules
+    └── src/
+        ├── main/
+        │   ├── AndroidManifest.xml  # Cleartext traffic, landscape orientation, network permissions
+        │   ├── java/com/sidepanel/app/
+        │   │   ├── SidePanelApp.kt  # Application entry point & repository container
+        │   │   ├── MainActivity.kt  # Landscape Compose Activity with live metrics preview
+        │   │   ├── data/
+        │   │   │   ├── protocol/
+        │   │   │   │   └── ProtocolModels.kt  # DTOs conforming strictly to PROTOCOL.md
+        │   │   │   ├── network/
+        │   │   │   │   ├── ConnectionState.kt # Lifecycle states (Disconnected, Connecting, Authenticating, Connected, Reconnecting)
+        │   │   │   │   └── SidePanelWebSocketClient.kt # OkHttp client with exponential backoff & heartbeat
+        │   │   │   └── repository/
+        │   │   │       └── TelemetryRepository.kt # Clean Architecture reactive repository
+        │   └── res/
+        │       └── values/
+        │           ├── strings.xml
+        │           └── themes.xml
+        └── test/
+            └── java/com/sidepanel/app/
+                └── ProtocolModelsTest.kt # Unit tests verifying JSON serialization & deserialization
 ```
+
+---
+
+## Running & Building
+
+### Running Unit Tests
+```powershell
+cd android
+.\gradlew.bat test
+```
+
+### Assembling Debug APK
+```powershell
+cd android
+.\gradlew.bat assembleDebug
+```
+The resulting APK will be located at:
+`android/app/build/outputs/apk/debug/app-debug.apk`

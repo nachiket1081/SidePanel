@@ -75,18 +75,21 @@ gantt
 
 ---
 
-### Milestone 3: Android Scaffolding & Network Core
+### Milestone 3: Android Scaffolding & Network Core *(Completed)*
 - **Objective**: Create the native Android Gradle project in Kotlin and implement the background WebSocket networking engine.
 - **Tasks**:
-  - [ ] Scaffolding native Android Studio project (`android/`) targeting SDK 35/36 with Compose BOM.
-  - [ ] Add dependencies: OkHttp, Kotlinx Serialization, Jetpack DataStore, Coroutines.
-  - [ ] Implement `data/protocol` models matching `PROTOCOL.md`.
-  - [ ] Implement `data/network/SidePanelWebSocketClient.kt` with OkHttp.
-  - [ ] Implement auto-reconnection state machine with exponential backoff.
-  - [ ] Implement `data/repository/TelemetryRepository.kt` exposing `Flow<TelemetryData>`.
+  - [x] Scaffolding native Android Studio project (`android/`) targeting SDK 35 with Compose BOM.
+  - [x] Add dependencies: OkHttp 4.12, Kotlinx Serialization 1.7.3, Jetpack DataStore 1.1.1, Coroutines 1.9.0.
+  - [x] Implement `data/protocol` models matching `PROTOCOL.md`.
+  - [x] Implement `data/network/SidePanelWebSocketClient.kt` with OkHttp.
+  - [x] Implement auto-reconnection state machine with exponential backoff.
+  - [x] Implement `data/repository/TelemetryRepository.kt` exposing `StateFlow<ConnectionState>` and `SharedFlow<MetricsStreamPayload>`.
+  - [x] Implement landscape `MainActivity.kt` with connection controls and live metric preview tiles.
+  - [x] Add automated unit tests verifying serialization and protocol compliance (`ProtocolModelsTest.kt`).
+  - [x] Successfully compile and assemble `app-debug.apk` with Gradle.
 - **Deliverables**:
-  - Android application connecting to Windows companion and printing received telemetry to Logcat.
-- **Exit Criteria**: Stable connection that recovers cleanly after Wi-Fi toggling or server restart.
+  - Complete, functional Android application connecting to Windows companion and streaming live telemetry.
+- **Exit Criteria**: Stable connection that recovers cleanly after Wi-Fi toggling or server restart; APK assembled and unit tests passing. (Verified)
 
 ---
 

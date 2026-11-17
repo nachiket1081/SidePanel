@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">SidePanel</string>
+    <string name="connection_status_disconnected">Disconnected</string>
+    <string name="connection_status_connecting">Connecting…</string>
+    <string name="connection_status_connected">Connected</string>
+    <string name="connection_status_reconnecting">Reconnecting…</string>
+</resources>
