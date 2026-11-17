@@ -49,5 +49,6 @@ android/.navigation/
 android/captures/
 
 # Sensitive runtime configurations & secrets
+windows/config.json
 windows/config.local.json
 android/secrets.properties

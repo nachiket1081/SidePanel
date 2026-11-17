@@ -15,6 +15,7 @@ from typing import Any, Callable, Dict, Optional, Set
 from websockets.asyncio.server import Server, ServerConnection, serve
 
 from ..core.config import ConfigManager, ServerConfig
+from ..hardware.aggregator import HardwareAggregator
 from .mock_telemetry import MockTelemetryGenerator
 from .protocol import (
     ErrorCode,
@@ -55,10 +56,19 @@ class SidePanelServer:
         self,
         config_manager: Optional[ConfigManager] = None,
         telemetry_provider: Optional[Callable[[], Dict[str, Any]]] = None,
+        use_mock_telemetry: bool = False,
     ) -> None:
         self.config_manager = config_manager or ConfigManager()
         self.config: ServerConfig = self.config_manager.config
-        self.telemetry_provider = telemetry_provider or MockTelemetryGenerator().generate
+
+        self._hardware_aggregator: Optional[HardwareAggregator] = None
+        if telemetry_provider is not None:
+            self.telemetry_provider = telemetry_provider
+        elif use_mock_telemetry:
+            self.telemetry_provider = MockTelemetryGenerator().generate
+        else:
+            self._hardware_aggregator = HardwareAggregator()
+            self.telemetry_provider = self._hardware_aggregator.collect
 
         self._server: Optional[Server] = None
         self._running = False
@@ -125,6 +135,10 @@ class SidePanelServer:
             self._server.close()
             await self._server.wait_closed()
             self._server = None
+
+        if self._hardware_aggregator:
+            self._hardware_aggregator.close()
+            self._hardware_aggregator = None
 
         logger.info("SidePanel WebSocket server stopped.")
 
