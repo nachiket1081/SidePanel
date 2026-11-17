@@ -1,0 +1,43 @@
+# ==============================================================================
+# SidePanel Windows Companion - Planned Python Dependencies
+#
+# Each dependency below is planned for the Windows background companion service.
+# None of these will be installed until the implementation phase commences.
+# ==============================================================================
+
+# Core Asynchronous WebSocket Networking
+# Required for RFC 6455 compliant, low-overhead WebSocket communication over LAN.
+websockets>=12.0
+
+# Hardware Telemetry (CPU, Memory, Disks, Network I/O)
+# Standard, battle-tested cross-platform process and system monitoring library.
+psutil>=5.9.0
+
+# GPU Telemetry (NVIDIA GPU utilization, VRAM, clock speed, temperatures)
+# Official Python bindings for the NVIDIA Management Library (NVML).
+# Provides direct, zero-overhead access to GPU telemetry on NVIDIA hardware.
+pynvml>=11.5.0
+
+# Windows System Audio Control
+# Python Core Audio Windows Library. Required to read master volume,
+# control volume levels, and toggle mute state via Windows CoreAudio API.
+pycaw>=20240210
+
+# Windows System Control & Media Key Emulation
+# Provides access to Win32 APIs for simulating media keys (Play/Pause, Skip),
+# locking the workstation, and querying display power states.
+pywin32>=306
+
+# System Tray Application & Status Icon
+# Lightweight system tray support for Windows background execution.
+pystray>=0.19.5
+Pillow>=10.2.0
+
+# Local Discovery & QR Code Pairing
+# Generates ASCII / PNG QR codes containing the local IP, port, and pairing token
+# to be rendered on the Windows companion UI for zero-friction mobile pairing.
+qrcode>=7.4.2
+
+# Testing & Linting (Development Only)
+pytest>=8.0.0
+pytest-asyncio>=0.23.0

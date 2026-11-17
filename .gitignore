@@ -1,0 +1,53 @@
+# ==========================================
+# SidePanel Monorepo Root .gitignore
+# ==========================================
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+.fleet/
+
+# ==========================================
+# Windows Companion (Python)
+# ==========================================
+windows/.venv/
+windows/venv/
+windows/env/
+windows/__pycache__/
+windows/**/__pycache__/
+windows/*.pyc
+windows/**/*.pyc
+windows/build/
+windows/dist/
+windows/*.egg-info/
+windows/.pytest_cache/
+windows/.coverage
+windows/htmlcov/
+windows/*.log
+
+# ==========================================
+# Android Application (Gradle / Kotlin)
+# ==========================================
+android/.gradle/
+android/build/
+android/*/build/
+android/local.properties
+android/*.signing/
+android/**/*.keystore
+android/**/*.jks
+android/.cxx/
+android/.navigation/
+android/captures/
+
+# Sensitive runtime configurations & secrets
+windows/config.local.json
+android/secrets.properties
