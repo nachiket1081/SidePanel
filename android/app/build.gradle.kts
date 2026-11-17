@@ -75,6 +75,13 @@ dependencies {
     // Local Secure Persistence (Paired PC IP, Port, Token)
     implementation(libs.androidx.datastore.preferences)
 
+    // CameraX & ML Kit QR Code Scanner for Device Pairing
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.mlkit.barcode.scanning)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

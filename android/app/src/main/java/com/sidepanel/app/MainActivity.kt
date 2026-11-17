@@ -16,19 +16,25 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,17 +44,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sidepanel.app.data.network.ConnectionState
+import com.sidepanel.app.data.preferences.PairingSettings
+import com.sidepanel.app.data.preferences.PreferencesManager
 import com.sidepanel.app.data.protocol.MetricsStreamPayload
 import com.sidepanel.app.data.repository.TelemetryRepository
+import com.sidepanel.app.ui.pairing.QrScannerDialog
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var repository: TelemetryRepository
+    private lateinit var preferencesManager: PreferencesManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        repository = (application as SidePanelApp).telemetryRepository
+
+        val app = application as SidePanelApp
+        repository = app.telemetryRepository
+        preferencesManager = app.preferencesManager
 
         setContent {
             MaterialTheme {
@@ -58,15 +72,29 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val connectionState by repository.connectionState.collectAsState()
                     val telemetry by repository.telemetry.collectAsState(initial = null)
+                    val pairingSettings by preferencesManager.pairingSettings.collectAsState(
+                        initial = PairingSettings()
+                    )
 
-                    SidePanelMilestone3Screen(
+                    SidePanelDashboardScreen(
                         connectionState = connectionState,
                         telemetry = telemetry,
+                        savedSettings = pairingSettings,
                         onConnect = { host, port, token ->
                             repository.connect(host = host, port = port, token = token)
                         },
                         onDisconnect = {
                             repository.disconnect()
+                        },
+                        onSavePairing = { host, port, token ->
+                            // Coroutine save in background
+                            app.applicationContext?.let {
+                                (app as SidePanelApp).let { a ->
+                                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                                        a.preferencesManager.savePairing(host, port, token)
+                                    }
+                                }
+                            }
                         }
                     )
                 }
@@ -76,15 +104,47 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun SidePanelMilestone3Screen(
+fun SidePanelDashboardScreen(
     connectionState: ConnectionState,
     telemetry: MetricsStreamPayload?,
+    savedSettings: PairingSettings,
     onConnect: (String, Int, String) -> Unit,
-    onDisconnect: () -> Unit
+    onDisconnect: () -> Unit,
+    onSavePairing: (String, Int, String) -> Unit
 ) {
-    var host by remember { mutableStateOf("10.0.2.2") } // 10.0.2.2 is PC host in Android Emulator
-    var portText by remember { mutableStateOf("8765") }
-    var token by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+    var host by remember { mutableStateOf(savedSettings.host) }
+    var portText by remember { mutableStateOf(savedSettings.port.toString()) }
+    var token by remember { mutableStateOf(savedSettings.token) }
+    var showScanner by remember { mutableStateOf(false) }
+
+    // Auto-update input fields when saved settings load from DataStore
+    LaunchedEffect(savedSettings) {
+        if (savedSettings.isConfigured) {
+            host = savedSettings.host
+            portText = savedSettings.port.toString()
+            token = savedSettings.token
+
+            // Auto-connect on startup if configured and disconnected
+            if (connectionState is ConnectionState.Disconnected && savedSettings.autoConnect) {
+                onConnect(savedSettings.host, savedSettings.port, savedSettings.token)
+            }
+        }
+    }
+
+    if (showScanner) {
+        QrScannerDialog(
+            onDismiss = { showScanner = false },
+            onQrScanned = { parsed ->
+                showScanner = false
+                host = parsed.host
+                portText = parsed.port.toString()
+                token = parsed.token
+                onSavePairing(parsed.host, parsed.port, parsed.token)
+                onConnect(parsed.host, parsed.port, parsed.token)
+            }
+        )
+    }
 
     Row(
         modifier = Modifier
@@ -92,10 +152,10 @@ fun SidePanelMilestone3Screen(
             .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Left Column: Connection Controls & Status
+        // Left Column: Connection Controls, QR Scanner & Status
         Card(
             modifier = Modifier
-                .weight(0.4f)
+                .weight(0.42f)
                 .fillMaxSize(),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
             shape = RoundedCornerShape(12.dp)
@@ -104,40 +164,65 @@ fun SidePanelMilestone3Screen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "SidePanel Companion",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "SidePanel Companion",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
 
                 ConnectionStatusPill(connectionState)
+
+                // QR Scanner Button
+                Button(
+                    onClick = { showScanner = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1F6FEB)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.QrCodeScanner,
+                        contentDescription = "Scan QR",
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text("Scan PC QR Code", color = Color.White, fontWeight = FontWeight.SemiBold)
+                }
 
                 OutlinedTextField(
                     value = host,
                     onValueChange = { host = it },
-                    label = { Text("PC IP Address") },
+                    label = { Text("PC IP Address (e.g. 192.168.x.x)") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                OutlinedTextField(
-                    value = portText,
-                    onValueChange = { portText = it },
-                    label = { Text("Port") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = token,
-                    onValueChange = { token = it },
-                    label = { Text("Pairing Token") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = portText,
+                        onValueChange = { portText = it },
+                        label = { Text("Port") },
+                        singleLine = true,
+                        modifier = Modifier.weight(0.35f)
+                    )
+                    OutlinedTextField(
+                        value = token,
+                        onValueChange = { token = it },
+                        label = { Text("Pairing Token") },
+                        singleLine = true,
+                        modifier = Modifier.weight(0.65f)
+                    )
+                }
 
                 Spacer(modifier = Modifier.weight(1f))
 
@@ -148,7 +233,8 @@ fun SidePanelMilestone3Screen(
                     Button(
                         onClick = onDisconnect,
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDA3633))
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDA3633)),
+                        shape = RoundedCornerShape(8.dp)
                     ) {
                         Text("Disconnect", color = Color.White)
                     }
@@ -156,12 +242,16 @@ fun SidePanelMilestone3Screen(
                     Button(
                         onClick = {
                             val port = portText.toIntOrNull() ?: 8765
-                            onConnect(host.trim(), port, token.trim())
+                            val h = host.trim()
+                            val tok = token.trim()
+                            onSavePairing(h, port, tok)
+                            onConnect(h, port, tok)
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF238636))
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF238636)),
+                        shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("Connect", color = Color.White)
+                        Text("Connect to PC", color = Color.White, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -170,7 +260,7 @@ fun SidePanelMilestone3Screen(
         // Right Column: Live Telemetry Preview
         Card(
             modifier = Modifier
-                .weight(0.6f)
+                .weight(0.58f)
                 .fillMaxSize(),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
             shape = RoundedCornerShape(12.dp)
@@ -235,12 +325,22 @@ fun SidePanelMilestone3Screen(
                             .background(Color(0xFF0D1117), RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Awaiting WebSocket connection & telemetry stream…",
-                            color = Color.Gray,
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 14.sp
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Awaiting connection to Windows companion…",
+                                color = Color.Gray,
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                text = "Tap 'Scan PC QR Code' or enter your PC's IP and Token",
+                                color = Color(0xFF8B949E),
+                                fontSize = 12.sp
+                            )
+                        }
                     }
                 }
             }
@@ -277,9 +377,21 @@ fun MetricPreviewTile(
 @Composable
 fun ConnectionStatusPill(state: ConnectionState) {
     val (bgColor, textColor, text) = when (state) {
-        is ConnectionState.Disconnected -> Triple(Color(0xFF30363D), Color.LightGray, "Disconnected")
-        is ConnectionState.Connecting -> Triple(Color(0xFF388BFD), Color.White, "Connecting…")
-        is ConnectionState.Authenticating -> Triple(Color(0xFFD29922), Color.Black, "Authenticating…")
+        is ConnectionState.Disconnected -> Triple(
+            Color(0xFF30363D),
+            Color.LightGray,
+            state.reason ?: "Disconnected"
+        )
+        is ConnectionState.Connecting -> Triple(
+            Color(0xFF388BFD),
+            Color.White,
+            "Connecting to ${state.host}:${state.port}…"
+        )
+        is ConnectionState.Authenticating -> Triple(
+            Color(0xFFD29922),
+            Color.Black,
+            "Authenticating with ${state.host}…"
+        )
         is ConnectionState.Connected -> Triple(
             Color(0xFF238636),
             Color.White,

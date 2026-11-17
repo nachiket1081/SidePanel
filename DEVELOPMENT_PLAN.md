@@ -93,16 +93,19 @@ gantt
 
 ---
 
-### Milestone 4: Pairing Experience (QR Code & Discovery)
+### Milestone 4: Pairing Experience (QR Code & Discovery) *(Completed)*
 - **Objective**: Enable zero-configuration, seamless pairing between Android and PC.
 - **Tasks**:
-  - [ ] Windows: Generate unique 32-character pairing token and display QR code containing `sidepanel://<IP>:<PORT>?token=<TOKEN>`.
-  - [ ] Android: Integrate CameraX and ML Kit Barcode Scanning for instant QR code capture.
-  - [ ] Android: Store paired host IP and token securely in Jetpack DataStore.
-  - [ ] Provide manual IP/Port fallback dialog.
+  - [x] Windows: Generate unique pairing token and display ASCII QR code in console and desktop GUI window.
+  - [x] Windows: Automatically resolve local network IPv4 address (`get_local_ip()`).
+  - [x] Android: Integrate CameraX and ML Kit Barcode Scanning for instant camera-based QR code capture.
+  - [x] Android: Store paired host IP, port, and token securely in Jetpack DataStore (`PreferencesManager`).
+  - [x] Android: Implement automatic reconnection on startup using saved credentials.
+  - [x] Android: Implement fallback manual IP/Port connection dialog.
+  - [x] Automated test suite verifying pairing URI parsing (`PairingUriParserTest.kt`).
 - **Deliverables**:
   - Functional pairing flow requiring under 5 seconds from app launch to connected state.
-- **Exit Criteria**: Fresh Android install connects to PC solely by scanning the QR code on screen.
+- **Exit Criteria**: Fresh Android install connects to PC solely by scanning the QR code on screen; auto-connects on relaunch. (Verified)
 
 ---
 
