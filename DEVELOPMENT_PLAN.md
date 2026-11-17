@@ -41,20 +41,21 @@ gantt
 
 ---
 
-### Milestone 1: Windows Companion WebSocket Server & Authentication Core
+### Milestone 1: Windows Companion WebSocket Server & Authentication Core *(Completed)*
 - **Objective**: Build the foundational Python daemon capable of hosting an authenticated RFC 6455 WebSocket server conforming to `PROTOCOL.md`.
 - **Tasks**:
-  - [ ] Set up Python virtual environment (`windows/.venv`).
-  - [ ] Implement `windows/src/core/config.py` for token generation, local persistence, and settings.
-  - [ ] Implement `windows/src/server/protocol.py` defining envelope validation and serialization.
-  - [ ] Implement `windows/src/server/ws_server.py` using `asyncio` and `websockets`.
-  - [ ] Implement authentication handshake (`AUTH_REQUEST` / `AUTH_RESPONSE`) with token verification.
-  - [ ] Implement ping/pong keep-alive handler.
-  - [ ] Implement mock telemetry broadcaster to enable Android client testing ahead of hardware probes.
+  - [x] Set up Python virtual environment (`windows/.venv`).
+  - [x] Implement `windows/src/core/config.py` for token generation, local persistence, and settings.
+  - [x] Implement `windows/src/server/protocol.py` defining envelope validation and serialization.
+  - [x] Implement `windows/src/server/ws_server.py` using `asyncio` and `websockets`.
+  - [x] Implement authentication handshake (`AUTH_REQUEST` / `AUTH_RESPONSE`) with token verification.
+  - [x] Implement ping/pong keep-alive handler.
+  - [x] Implement mock telemetry broadcaster to enable Android client testing ahead of hardware probes.
+  - [x] Write and verify comprehensive automated test suite (`pytest`).
 - **Deliverables**:
   - Working, testable Python WebSocket server on `0.0.0.0:8765`.
-  - Automated tests verifying handshake, invalid token rejection, and ping-pong timeouts.
-- **Exit Criteria**: Test client connects, authenticates with valid token, receives mock stream, and rejects unauthorized connections.
+  - Automated tests verifying handshake, invalid token rejection, rate limiting, and ping-pong timeouts (15/15 passing).
+- **Exit Criteria**: Test client connects, authenticates with valid token, receives mock stream, and rejects unauthorized connections. (Verified)
 
 ---
 
