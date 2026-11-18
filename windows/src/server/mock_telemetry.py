@@ -76,6 +76,9 @@ class MockTelemetryGenerator:
                 "uploadBytesPerSec": max(0, ul_rate),
                 "activeInterface": "Ethernet 10Gbps",
             },
+            "system": {
+                "uptimeSeconds": 14250 + self.step,
+            },
             "audio": {
                 "masterVolumePercent": 75,
                 "isMuted": False,

@@ -87,6 +87,9 @@ class ProtocolModelsTest {
                 downloadBytesPerSec = 524288,
                 uploadBytesPerSec = 65536,
                 activeInterface = "Wi-Fi"
+            ),
+            system = com.sidepanel.app.data.protocol.SystemInfoMetrics(
+                uptimeSeconds = 3600
             )
         )
 
@@ -104,6 +107,7 @@ class ProtocolModelsTest {
         assertEquals("NVIDIA GeForce RTX 3060", telemetry.gpu.name)
         assertEquals(50.0f, telemetry.ram.usagePercent, 0.01f)
         assertEquals("Wi-Fi", telemetry.network.activeInterface)
+        assertEquals(3600L, telemetry.system?.uptimeSeconds)
         assertNotNull(telemetry.disk.primaryDrive)
         assertEquals("C:", telemetry.disk.primaryDrive?.letter)
     }

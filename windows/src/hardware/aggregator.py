@@ -9,6 +9,8 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
+import psutil
+
 from .cpu import CPUCollector
 from .gpu import GPUCollector
 from .io import IOCollector
@@ -45,12 +47,21 @@ class HardwareAggregator:
         gpu_data = self.gpu_collector.collect()
         io_data = self.io_collector.collect()
 
+        uptime_sec = 0
+        try:
+            uptime_sec = int(time.time() - psutil.boot_time())
+        except Exception:
+            pass
+
         telemetry: Dict[str, Any] = {
             "cpu": cpu_data,
             "ram": ram_data,
             "gpu": gpu_data,
             "disk": io_data["disk"],
             "network": io_data["network"],
+            "system": {
+                "uptimeSeconds": uptime_sec,
+            },
             "audio": {
                 "masterVolumePercent": 50,
                 "isMuted": False,

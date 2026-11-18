@@ -93,7 +93,14 @@ data class MetricsStreamPayload(
     val gpu: GpuMetrics,
     val disk: DiskMetrics,
     val network: NetworkMetrics,
+    val system: SystemInfoMetrics? = null,
     val audio: AudioMetrics? = null
+)
+
+@Serializable
+data class SystemInfoMetrics(
+    val uptimeSeconds: Long = 0,
+    val bootTimeEpoch: Long = 0
 )
 
 @Serializable
