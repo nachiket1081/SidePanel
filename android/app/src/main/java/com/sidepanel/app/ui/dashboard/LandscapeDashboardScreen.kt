@@ -70,6 +70,7 @@ fun LandscapeDashboardScreen(
     onConnect: (String, Int, String) -> Unit,
     onDisconnect: () -> Unit,
     onSavePairing: (String, Int, String) -> Unit,
+    onClearPairing: () -> Unit = {},
     onUpdateInterval: (Int) -> Unit = {}
 ) {
     var showScanner by remember { mutableStateOf(false) }
@@ -141,8 +142,8 @@ fun LandscapeDashboardScreen(
                 onDisconnect = onDisconnect
             )
 
-            if (telemetry == null && connectionState !is ConnectionState.Connected) {
-                // Disconnected Setup View
+            if (!savedSettings.isConfigured) {
+                // First-time Disconnected Setup View
                 DisconnectedSetupView(
                     connectionState = connectionState,
                     savedSettings = savedSettings,
@@ -155,7 +156,7 @@ fun LandscapeDashboardScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(116.dp),
+                        .height(104.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     CpuHardwareCard(cpu = telemetry.cpu, modifier = Modifier.weight(1f))
@@ -207,19 +208,118 @@ fun LandscapeDashboardScreen(
                     pingMs = pingMs
                 )
             } else {
-                // Connected but waiting for initial packet
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(SurfaceCard, RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
+                // Configured, waiting for connection or initial telemetry stream
+                ConfiguredWaitingView(
+                    connectionState = connectionState,
+                    savedSettings = savedSettings,
+                    onReconnect = { onConnect(savedSettings.host, savedSettings.port, savedSettings.token) },
+                    onOpenScanner = { showScanner = true }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConfiguredWaitingView(
+    connectionState: ConnectionState,
+    savedSettings: PairingSettings,
+    onReconnect: () -> Unit,
+    onOpenScanner: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(SurfaceCard, RoundedCornerShape(12.dp))
+            .border(1.dp, BorderSubtle, RoundedCornerShape(12.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(24.dp)
+        ) {
+            when (connectionState) {
+                is ConnectionState.Connecting -> {
                     Text(
-                        text = "INITIALIZING TELEMETRY STREAM...",
-                        fontSize = 12.sp,
+                        text = "CONNECTING TO PC...",
+                        fontSize = 14.sp,
                         fontFamily = FontFamily.Monospace,
-                        color = NeonCyan
+                        fontWeight = FontWeight.Bold,
+                        color = NeonCyan,
+                        letterSpacing = 1.sp
                     )
+                    Text(
+                        text = "${savedSettings.host}:${savedSettings.port}",
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = TextSecondary
+                    )
+                }
+                is ConnectionState.Reconnecting -> {
+                    Text(
+                        text = "RECONNECTING (ATTEMPT ${connectionState.attempt})...",
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFFFB454),
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = "Attempting to reach ${savedSettings.host}:${savedSettings.port}",
+                        fontSize = 11.sp,
+                        color = TextSecondary
+                    )
+                }
+                is ConnectionState.Connected -> {
+                    Text(
+                        text = "SYNCHRONIZING TELEMETRY STREAM...",
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = NeonCyan,
+                        letterSpacing = 1.sp
+                    )
+                }
+                else -> {
+                    val errorMsg = (connectionState as? ConnectionState.Disconnected)?.reason
+                    Text(
+                        text = if (errorMsg != null) "CONNECTION DISCONNECTED" else "PC OFFLINE",
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFFF5252),
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = errorMsg ?: "Cannot reach ${savedSettings.host}:${savedSettings.port}",
+                        fontSize = 11.sp,
+                        color = TextSecondary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(
+                            onClick = onReconnect,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1F6FEB)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Reconnect", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                        Button(
+                            onClick = onOpenScanner,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF21262D)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QrCodeScanner,
+                                contentDescription = "Scan",
+                                modifier = Modifier.size(16.dp),
+                                tint = NeonCyan
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Scan New QR", color = TextPrimary)
+                        }
+                    }
                 }
             }
         }

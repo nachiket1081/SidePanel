@@ -8,10 +8,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,8 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -46,7 +44,6 @@ import com.sidepanel.app.ui.theme.ElectricBlue
 import com.sidepanel.app.ui.theme.NeonCyan
 import com.sidepanel.app.ui.theme.NeonGreen
 import com.sidepanel.app.ui.theme.SurfaceCard
-import com.sidepanel.app.ui.theme.TextMuted
 import com.sidepanel.app.ui.theme.TextPrimary
 import com.sidepanel.app.ui.theme.TextSecondary
 import java.util.Locale
@@ -67,7 +64,7 @@ fun NetworkMonitorPanel(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(10.dp),
+                .padding(horizontal = 10.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             // Header: Title & Adapter
@@ -84,7 +81,7 @@ fun NetworkMonitorPanel(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "NETWORK THROUGHPUT",
+                        text = "NETWORK",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextSecondary,
@@ -95,7 +92,7 @@ fun NetworkMonitorPanel(
                 Box(
                     modifier = Modifier
                         .background(Color(0xFF0F1824), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .padding(horizontal = 6.dp, vertical = 1.dp)
                 ) {
                     Text(
                         text = network.activeInterface,
@@ -108,10 +105,11 @@ fun NetworkMonitorPanel(
                 }
             }
 
-            // Middle: Download & Upload Stat Columns
+            // Stat Readouts: Download & Upload Side-by-Side
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 // Download
                 Row(
@@ -122,17 +120,18 @@ fun NetworkMonitorPanel(
                         imageVector = Icons.Default.ArrowDownward,
                         contentDescription = "Down",
                         tint = NeonCyan,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(14.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
                     Column {
                         Text("DOWN", fontSize = 7.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
                         Text(
                             text = formatNetRate(network.downloadBytesPerSec),
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Monospace,
-                            color = NeonCyan
+                            color = NeonCyan,
+                            maxLines = 1
                         )
                     }
                 }
@@ -146,17 +145,18 @@ fun NetworkMonitorPanel(
                         imageVector = Icons.Default.ArrowUpward,
                         contentDescription = "Up",
                         tint = NeonGreen,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(14.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
                     Column {
                         Text("UP", fontSize = 7.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
                         Text(
                             text = formatNetRate(network.uploadBytesPerSec),
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Monospace,
-                            color = NeonGreen
+                            color = NeonGreen,
+                            maxLines = 1
                         )
                     }
                 }
@@ -166,7 +166,7 @@ fun NetworkMonitorPanel(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(28.dp)
+                    .heightIn(min = 14.dp, max = 22.dp)
                     .background(DarkCanvas, RoundedCornerShape(4.dp))
                     .border(0.5.dp, BorderSubtle.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
             ) {
@@ -182,7 +182,7 @@ fun NetworkMonitorPanel(
                         val path = Path()
                         points.forEachIndexed { i, pt ->
                             val x = i * stepX
-                            val y = h * (1f - (pt.downloadBytesPerSec.toFloat() / maxDl).coerceIn(0.05f, 0.95f))
+                            val y = h * (1f - (pt.downloadBytesPerSec.toFloat() / maxDl).coerceIn(0.1f, 0.9f))
                             if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
                         }
 

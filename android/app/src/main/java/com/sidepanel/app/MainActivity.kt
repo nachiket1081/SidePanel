@@ -7,9 +7,12 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -56,12 +59,29 @@ class MainActivity : ComponentActivity() {
                     )
                     val historyBuffer = remember { PerformanceHistoryBuffer(maxCapacity = 60) }
 
+                    var hasAutoConnected by remember { mutableStateOf(false) }
+
+                    // Automatic seamless reconnect on startup if previously paired
+                    LaunchedEffect(pairingSettings) {
+                        if (pairingSettings.isConfigured && !hasAutoConnected) {
+                            if (connectionState is com.sidepanel.app.data.network.ConnectionState.Disconnected && pairingSettings.autoConnect) {
+                                hasAutoConnected = true
+                                repository.connect(
+                                    host = pairingSettings.host,
+                                    port = pairingSettings.port,
+                                    token = pairingSettings.token
+                                )
+                            }
+                        }
+                    }
+
                     LandscapeDashboardScreen(
                         connectionState = connectionState,
                         telemetry = telemetry,
                         savedSettings = pairingSettings,
                         historyBuffer = historyBuffer,
                         onConnect = { host, port, token ->
+                            hasAutoConnected = true
                             repository.connect(host = host, port = port, token = token)
                         },
                         onDisconnect = {
@@ -70,6 +90,11 @@ class MainActivity : ComponentActivity() {
                         onSavePairing = { host, port, token ->
                             CoroutineScope(Dispatchers.IO).launch {
                                 preferencesManager.savePairing(host, port, token)
+                            }
+                        },
+                        onClearPairing = {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                preferencesManager.clearPairing()
                             }
                         }
                     )
